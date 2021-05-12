@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">AirQuality Sensors</string>
+    <string name="co2_field">CO2</string>
+    <string name="humidity_field">Humidity</string>
+    <string name="temperature_field">Temperature</string>
+    <string name="light">Lighting</string>
+    <string name="show_all">Show all</string>
+</resources>
