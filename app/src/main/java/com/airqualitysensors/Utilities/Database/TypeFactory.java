@@ -7,6 +7,7 @@ public class TypeFactory {
     public static final int HUMIDITY = 1;
     public static final int TEMPERATURE = 2;
     public static final int LIGHT = 3;
+    public static final int PRESSURE = 4;
 
     public final static  Type[] types = {new Type(){{
         typeId = CO2;
@@ -24,6 +25,10 @@ public class TypeFactory {
         typeId = LIGHT;
         name = "Lighting";
         unit = "lux";
+    }}, new Type(){{
+        typeId = PRESSURE;
+        name = "Pressure";
+        unit = "hP";
     }}};
 
     public static Type getInstanceOf(int type){
@@ -36,6 +41,7 @@ public class TypeFactory {
             case "humi" : return HUMIDITY;
             case "temp": return TEMPERATURE;
             case "lumi" : return LIGHT;
+            case "pres" : return PRESSURE;
             default: return ERROR;
         }
     }

@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.room.Room;
 
 import com.airqualitysensors.Utilities.Bluetooth.BluetoothManager;
+import com.airqualitysensors.Utilities.Bluetooth.ConnectionListener;
 import com.airqualitysensors.Utilities.Bluetooth.Data;
 import com.airqualitysensors.Utilities.Database.DataBase;
 import com.airqualitysensors.Utilities.Database.DataDao;
@@ -42,15 +43,15 @@ public class DataManager extends AndroidViewModel implements Observer {
         db = Room.databaseBuilder(application, DataBase.class, "timeddata").build();
         dao = db.dataDao();
         data = new MutableLiveData<>();
-        currentData = new MutableLiveData<TimedData[]>();
+        currentData = new MutableLiveData<>();
 
          Thread t = new Thread(){
             @Override
             public void run() {
                 dao.deleteData();
-                //dao.deleteTypes();
-                //initTypes();
-                //initData();
+                dao.deleteTypes();
+                initTypes();
+                initData();
             }
         };
         //t.start();
@@ -58,15 +59,13 @@ public class DataManager extends AndroidViewModel implements Observer {
         tasks.add(typeLoader());
         tasks.add(dataLoader());
         executeTasks();
+    }
 
-
-
-        bluetoothManager = new BluetoothManager();
+    public void connect(String deviceName, ConnectionListener listener) {
+        bluetoothManager = new BluetoothManager(deviceName);
+        bluetoothManager.registerConnectionListener(listener);
         bluetoothManager.addObserver(this);
-
-        Thread temp = new Thread(() -> {
-            bluetoothManager.connect();
-        });
+        Thread temp = new Thread(() -> bluetoothManager.connect());
         temp.start();
     }
 
@@ -78,7 +77,7 @@ public class DataManager extends AndroidViewModel implements Observer {
                     Runnable r;
                     while ((r = tasks.poll()) != null) {
                         try {
-                            Thread temp = new Thread(r::run);
+                            Thread temp = new Thread(r);
                             temp.start();
                             temp.join();
                         } catch (InterruptedException e) {
@@ -134,13 +133,10 @@ public class DataManager extends AndroidViewModel implements Observer {
     }
 
     private Runnable dataLoader() {
-        return new Runnable() {
-            @Override
-            public void run() {
-                if(currentType != null) {
-                    List<TimedData> d = dao.getDataByType(currentType.typeId);
-                    data.postValue(d);
-                }
+        return () -> {
+            if(currentType != null) {
+                List<TimedData> d = dao.getDataByType(currentType.typeId);
+                data.postValue(d);
             }
         };
     }
@@ -170,15 +166,12 @@ public class DataManager extends AndroidViewModel implements Observer {
     }
 
     private Runnable typeLoader() {
-            return new Runnable() {
-                @Override
-                public void run() {
-                        if (types==null) {
-                            types = dao.getAllTypes();
-                        }
-                        if(!types.isEmpty())
-                            currentType = types.get(3);
-                }
+            return () -> {
+                    if (types==null) {
+                        types = dao.getAllTypes();
+                    }
+                    if(!types.isEmpty())
+                        currentType = types.get(3);
             };
     }
 
@@ -214,15 +207,14 @@ public class DataManager extends AndroidViewModel implements Observer {
 
     @Override
     public void update(Observable observable, Object o) {
-        if(observable instanceof BluetoothManager && !bluetoothManager.dataQueue.isEmpty()){
+        while(observable instanceof BluetoothManager && !bluetoothManager.dataQueue.isEmpty()){
             Data data = bluetoothManager.dataQueue.poll();
             try {
                 addData(new TimedData() {{
-                            typeId = TypeFactory.getInstanceOf(TypeFactory.getType(data.getType())).typeId;
+                            typeId = TypeFactory.getInstanceOf(TypeFactory.getType(data != null ? data.getType() : null)).typeId;
                             time = Calendar.getInstance().getTime();
                             value = Float.parseFloat(data.getData());
-                        }}
-                );
+                        }});
             }catch (Exception e){
             Log.e("Data Manager", e.toString());
             }

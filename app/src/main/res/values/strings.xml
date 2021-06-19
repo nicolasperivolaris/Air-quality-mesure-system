@@ -5,4 +5,7 @@
     <string name="temperature_field">Temperature</string>
     <string name="light">Lighting</string>
     <string name="show_all">Show all</string>
+    <string name="connectionButton">Connect</string>
+    <string name="device1">HC-05</string>
+    <string name="device2">HC-06</string>
 </resources>
